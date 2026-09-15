@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>História na Palma da Mão</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1c1917">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="active">
+        <div class="splash-content">
+            <h1 class="logo-text">História na<br>Palma da Mão</h1>
+            <p class="subtitle">Guia Turístico Inteligente</p>
+            <div class="loader"></div>
+            <button id="start-btn" class="primary-btn hidden">Começar</button>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden">
+        <!-- Camera View -->
+        <div class="camera-wrapper">
+            <video id="camera-feed" autoplay playsinline></video>
+            <canvas id="detection-overlay"></canvas>
+        </div>
+
+        <!-- Top UI Bar -->
+        <header class="top-bar">
+            <h2 class="app-title">Maranhão Histórico</h2>
+            <button id="settings-btn" class="icon-btn" aria-label="Configurações">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </header>
+
+        <!-- Status Toast -->
+        <div id="status-toast" class="toast hidden">
+            <span class="status-icon">🔄</span>
+            <span class="status-text">Iniciando câmera...</span>
+        </div>
+
+        <!-- Bottom Info Panel (Bottom Sheet) -->
+        <div id="info-panel" class="bottom-sheet collapsed">
+            <div class="drag-handle"></div>
+            
+            <div class="info-empty-state">
+                <div class="scan-icon">🔍</div>
+                <p>Aponte a câmera para um monumento histórico</p>
+            </div>
+
+            <div class="info-content hidden">
+                <div class="monument-header">
+                    <span class="monument-category">Busto</span>
+                    <h3 id="monument-title">Nome do Monumento</h3>
+                </div>
+                
+                <div class="confidence-badge">
+                    <span>Certeza: <strong id="confidence-value">98%</strong></span>
+                </div>
+
+                <div class="monument-details">
+                    <p id="monument-period" class="period-text">1823 - 1864</p>
+                    <p id="monument-description" class="description-text">
+                        Biografia ou descrição histórica aparecerá aqui.
+                    </p>
+                    <div class="monument-location">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span id="monument-address">Localização</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Configurações</h3>
+                    <button class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-item">
+                        <label for="confidence-slider">Confiança Mínima (<span id="conf-val-display">40</span>%)</label>
+                        <input type="range" id="confidence-slider" min="10" max="90" value="40">
+                        <p class="setting-desc">Aumente se estiver detectando coisas erradas.</p>
+                    </div>
+                    <div class="setting-item">
+                        <label>Câmera</label>
+                        <button id="switch-camera-btn" class="secondary-btn">Alternar Câmera</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="/main.js"></script>
+</body>
+</html>

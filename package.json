@@ -1,0 +1,14 @@
+{
+  "name": "historia-na-palma-da-mao",
+  "version": "1.0.0",
+  "description": "Guia turístico inteligente dos monumentos históricos do Maranhão com visão computacional",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
