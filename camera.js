@@ -40,13 +40,14 @@ export async function switchCamera(front = false) {
         return new Promise((resolve) => {
             video.onloadedmetadata = () => {
                 video.play();
+                console.log(`[CAMERA] Video ready: ${video.videoWidth}x${video.videoHeight}`);
                 // Setup overlay dimensions to match video
                 UIManager.setupOverlay(video.videoWidth, video.videoHeight);
                 resolve(true);
             };
         });
     } catch (err) {
-        console.error("Camera error:", err);
+        console.error("[CAMERA] Camera error:", err);
         throw err;
     }
 }
@@ -54,10 +55,12 @@ export async function switchCamera(front = false) {
 export function startCaptureLoop() {
     if (detectionInterval) clearInterval(detectionInterval);
     
+    let frameCount = 0;
     detectionInterval = setInterval(async () => {
         if (isDetecting || !video.videoWidth) return;
         
         isDetecting = true;
+        frameCount++;
         
         try {
             // Setup canvas size
@@ -70,16 +73,22 @@ export function startCaptureLoop() {
             // Convert to base64 (jpeg is smaller)
             const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
             
+            if (frameCount <= 3 || frameCount % 10 === 0) {
+                console.log(`[CAMERA] Frame #${frameCount} captured, sending to API...`);
+            }
+            
             // Send to Roboflow
             await detectFrame(base64Image, canvas.width, canvas.height);
             
         } catch (error) {
-            console.error("Detection error:", error);
+            console.error("[CAMERA] Detection error:", error);
         } finally {
             isDetecting = false;
         }
         
     }, CAPTURE_INTERVAL_MS);
+    
+    console.log(`[CAMERA] Capture loop started (interval: ${CAPTURE_INTERVAL_MS}ms)`);
 }
 
 // Attach listener to settings

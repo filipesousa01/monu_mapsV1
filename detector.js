@@ -5,7 +5,7 @@ import { getHistoricalData } from './historical-data.js';
 const PROJECT = "hisoria_na_palma_da_mao-bkhoi";
 const VERSION = "5"; 
 const API_KEY = "ctApc87kQzIZ5PlfinJG";
-const CONFIDENCE_THRESHOLD = 0.40; // Default
+const CONFIDENCE_THRESHOLD = 0.25; // Abaixado para facilitar detecção de fotos na tela
 
 export async function detectFrame(base64Image, videoWidth, videoHeight) {
     // Pega a confiança do slider
@@ -24,15 +24,18 @@ export async function detectFrame(base64Image, videoWidth, videoHeight) {
         });
 
         if (!response.ok) {
+            console.error(`[DETECTOR] API error: ${response.status}`);
             throw new Error(`API error: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log(`[DETECTOR] Predictions received: ${data.predictions.length} total`);
         
         // Filtra detecções pela confiança mínima
         const validPredictions = data.predictions.filter(p => p.confidence >= minConfidence);
-        
-        // Atualiza overlay com caixas (draw)
+        console.log(`[DETECTOR] Valid predictions (>= ${Math.round(minConfidence*100)}%): ${validPredictions.length}`);
+
+        // drawDetections é no-op (câmera limpa)
         UIManager.drawDetections(validPredictions, data.image.width, data.image.height);
 
         // Se encontrou algo, atualiza o painel com a de maior confiança
@@ -42,12 +45,15 @@ export async function detectFrame(base64Image, videoWidth, videoHeight) {
                 (prev.confidence > current.confidence) ? prev : current
             );
             
+            console.log(`[DETECTOR] Best: "${bestPrediction.class}" (${Math.round(bestPrediction.confidence*100)}%)`);
+            
             // Busca dados históricos
             const info = getHistoricalData(bestPrediction.class);
-            UIManager.showInfoPanel(info, bestPrediction.confidence);
+            console.log(`[DETECTOR] Historical data found: "${info?.name}"`);
+            UIManager.showInfoPanel(info, bestPrediction.confidence, bestPrediction.class);
         }
 
     } catch (error) {
-        console.error("Inference Error:", error);
+        console.error("[DETECTOR] Inference Error:", error);
     }
 }

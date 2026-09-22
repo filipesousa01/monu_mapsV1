@@ -1,9 +1,15 @@
+import { highlightMonumentOnMap } from './map.js';
+
 export const UIManager = {
     canvas: document.getElementById('detection-overlay'),
     ctx: null,
-    infoPanel: document.getElementById('info-panel'),
-    settingsModal: document.getElementById('settings-modal'),
     videoElement: document.getElementById('camera-feed'),
+    settingsModal: document.getElementById('settings-modal'),
+    
+    // Bottom sheet
+    infoPanel: document.getElementById('info-panel'),
+    emptyState: document.querySelector('.info-empty-state'),
+    contentState: document.querySelector('.info-content'),
     
     // Info Elements
     titleEl: document.getElementById('monument-title'),
@@ -12,11 +18,16 @@ export const UIManager = {
     descEl: document.getElementById('monument-description'),
     addrEl: document.getElementById('monument-address'),
     
-    emptyState: document.querySelector('.info-empty-state'),
-    contentState: document.querySelector('.info-content'),
+    // Collapsible Elements
+    pillNameDisplay: document.getElementById('pill-name-display'),
+    pillBadgeDisplay: document.getElementById('pill-badge-display'),
+    sheetPillToggle: document.getElementById('sheet-pill-toggle'),
+    sheetDragHandle: document.getElementById('sheet-drag-handle'),
 
     init() {
-        this.ctx = this.canvas.getContext('2d');
+        if (this.canvas) {
+            this.ctx = this.canvas.getContext('2d');
+        }
         
         // Setup slider
         const slider = document.getElementById('confidence-slider');
@@ -31,30 +42,48 @@ export const UIManager = {
         document.querySelector('.close-btn')?.addEventListener('click', () => {
             this.settingsModal.classList.add('hidden');
         });
-        
-        // Setup bottom sheet drag/touch interactions (simplificado)
-        this.infoPanel.addEventListener('click', () => {
-            if (this.infoPanel.classList.contains('peek')) {
-                this.infoPanel.style.maxHeight = '80vh';
-                this.infoPanel.style.transform = 'translateY(0)';
+
+        this.sheetPillToggle?.addEventListener('click', () => this.toggleSheet());
+        this.sheetDragHandle?.addEventListener('click', () => this.toggleSheet());
+
+        // Initially show collapsed state
+        this.infoPanel.className = 'bottom-sheet state-collapsed';
+    },
+
+    toggleSheet() {
+        // Se estiver escondido, não faz nada
+        if (this.infoPanel.classList.contains('state-hidden')) return;
+
+        // Se estiver expandido, recolhe para o estado anterior (peek se tiver conteúdo, senão collapsed)
+        if (this.infoPanel.classList.contains('state-expanded')) {
+            if (!this.emptyState.classList.contains('hidden')) {
+                this.infoPanel.className = 'bottom-sheet state-collapsed';
+            } else {
+                this.infoPanel.className = 'bottom-sheet state-peek';
             }
-        });
+        } else {
+            // Se estiver colapsado ou em peek, expande para ver tudo
+            this.infoPanel.className = 'bottom-sheet state-expanded';
+        }
     },
 
     setupOverlay(videoWidth, videoHeight) {
-        // Set canvas internal dimensions to match video source
-        this.canvas.width = videoWidth;
-        this.canvas.height = videoHeight;
+        // Canvas mantido apenas para captura de frames (offscreen), sem desenho visual
+        if (this.canvas) {
+            this.canvas.width = videoWidth;
+            this.canvas.height = videoHeight;
+        }
     },
 
     drawDetections(predictions, imageWidth, imageHeight) {
+        if (!this.ctx) return;
+        
         // Clear previous
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         if (!predictions || predictions.length === 0) return;
 
-        // Calculate scaling if video aspect ratio differs from canvas (usually handled by object-fit)
-        // Here we assume canvas dimension matches video dimensions directly via setupOverlay
+        // Calculate scaling
         const scaleX = this.canvas.width / imageWidth;
         const scaleY = this.canvas.height / imageHeight;
 
@@ -64,50 +93,83 @@ export const UIManager = {
             const w = p.width * scaleX;
             const h = p.height * scaleY;
             
-            // Calc Top Left
+            // Top Left
             const tlX = x - (w / 2);
             const tlY = y - (h / 2);
 
-            // Draw Box
-            this.ctx.strokeStyle = '#d4af37'; // Dourado
-            this.ctx.lineWidth = 4;
-            this.ctx.strokeRect(tlX, tlY, w, h);
+            // Bounding box minimalista (cantoneiras)
+            this.ctx.strokeStyle = '#20b27c'; // Emerald accent
+            this.ctx.lineWidth = 2.5;
             
-            // Draw Background for text
-            this.ctx.fillStyle = 'rgba(28, 25, 23, 0.8)';
-            this.ctx.fillRect(tlX, tlY - 30, w, 30);
+            const cornerSize = 20;
+
+            this.ctx.beginPath();
+            // Top left corner
+            this.ctx.moveTo(tlX, tlY + cornerSize);
+            this.ctx.lineTo(tlX, tlY);
+            this.ctx.lineTo(tlX + cornerSize, tlY);
             
-            // Draw Text
-            this.ctx.fillStyle = '#d4af37';
-            this.ctx.font = 'bold 16px Inter, sans-serif';
+            // Top right corner
+            this.ctx.moveTo(tlX + w - cornerSize, tlY);
+            this.ctx.lineTo(tlX + w, tlY);
+            this.ctx.lineTo(tlX + w, tlY + cornerSize);
             
-            // Format class name (remove underscores, capitalize)
-            let displayName = p.class.replace(/_/g, ' ');
-            // Limita nome muito longo no box
-            if (displayName.length > 20) displayName = displayName.substring(0, 17) + '...';
+            // Bottom right corner
+            this.ctx.moveTo(tlX + w, tlY + h - cornerSize);
+            this.ctx.lineTo(tlX + w, tlY + h);
+            this.ctx.lineTo(tlX + w - cornerSize, tlY + h);
             
-            const text = `${displayName} (${Math.round(p.confidence * 100)}%)`;
-            this.ctx.fillText(text, tlX + 5, tlY - 10);
+            // Bottom left corner
+            this.ctx.moveTo(tlX, tlY + h - cornerSize);
+            this.ctx.lineTo(tlX, tlY + h);
+            this.ctx.lineTo(tlX + cornerSize, tlY + h);
+            
+            this.ctx.stroke();
+
+            // Ponto central de foco (cruz pequena)
+            this.ctx.beginPath();
+            this.ctx.moveTo(x - 5, y);
+            this.ctx.lineTo(x + 5, y);
+            this.ctx.moveTo(x, y - 5);
+            this.ctx.lineTo(x, y + 5);
+            this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)'; // Dourado
+            this.ctx.lineWidth = 1.5;
+            this.ctx.stroke();
         });
     },
 
-    showInfoPanel(historicalData, confidence) {
+    showInfoPanel(historicalData, confidence, classKey) {
         if (!historicalData) return;
-        
+
+        const confPct = Math.round(confidence * 100);
+
+        // Update Pill UI
+        this.pillNameDisplay.textContent = historicalData.name;
+        this.pillNameDisplay.classList.remove('pill-name-empty');
+        this.pillBadgeDisplay.textContent = `${confPct}%`;
+        this.pillBadgeDisplay.classList.remove('hidden');
+
         // Hide empty state, show content
         this.emptyState.classList.add('hidden');
         this.contentState.classList.remove('hidden');
-        
-        // Populate data
+
+        // Populate expanded data
         this.titleEl.textContent = historicalData.name;
-        this.confEl.textContent = `${Math.round(confidence * 100)}%`;
         this.periodEl.textContent = historicalData.period || 'Data não disponível';
         this.descEl.textContent = historicalData.description;
         this.addrEl.textContent = historicalData.location || 'São Luís, MA';
-        
-        // Slide up panel (peek mode)
-        this.infoPanel.classList.remove('collapsed');
-        this.infoPanel.classList.add('peek');
+
+        // Auto-show info panel when monument detected
+        // Se está escondido ou apenas colapsado, abre em peek para mostrar resultado
+        if (this.infoPanel.classList.contains('state-hidden') || 
+            this.infoPanel.classList.contains('state-collapsed')) {
+            this.infoPanel.className = 'bottom-sheet state-peek';
+        }
+
+        // Highlight on map (if map is active/implemented)
+        if (typeof highlightMonumentOnMap === 'function' && classKey) {
+            highlightMonumentOnMap(classKey);
+        }
     },
     
     toggleSettings() {
