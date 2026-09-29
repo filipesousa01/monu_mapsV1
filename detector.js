@@ -17,10 +17,7 @@ export async function detectFrame(base64Image, videoWidth, videoHeight) {
     try {
         const response = await fetch(url, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: encodeURIComponent(base64Image)
+            body: base64Image
         });
 
         if (!response.ok) {
