@@ -20,7 +20,7 @@ export async function detectFrame(base64Image, videoWidth, videoHeight) {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
             },
-            body: base64Image
+            body: encodeURIComponent(base64Image)
         });
 
         if (!response.ok) {
