@@ -1,21 +1,17 @@
 import { UIManager } from './ui.js';
 import { getHistoricalData } from './historical-data.js';
 
-// Configurações do Roboflow (Versão 5 tem o modelo treinado ativo)
-const PROJECT = import.meta.env.VITE_ROBOFLOW_PROJECT || "hisoria_na_palma_da_mao-bkhoi";
-const VERSION = import.meta.env.VITE_ROBOFLOW_VERSION || "5"; 
-const API_KEY = import.meta.env.VITE_ROBOFLOW_API_KEY || "ctApc87kQzIZ5PlfinJG";
-const CONFIDENCE_THRESHOLD = 0.25; // Abaixado para facilitar detecção de fotos na tela
+// Confiança mínima padrão
+const CONFIDENCE_THRESHOLD = 0.25;
 
 export async function detectFrame(base64Image, videoWidth, videoHeight) {
     // Pega a confiança do slider
     const slider = document.getElementById('confidence-slider');
     const minConfidence = slider ? parseInt(slider.value) / 100 : CONFIDENCE_THRESHOLD;
 
-    const url = `https://detect.roboflow.com/${PROJECT}/${VERSION}?api_key=${API_KEY}`;
-
     try {
-        const response = await fetch(url, {
+        // Chama o proxy serverless — a API key fica segura no servidor
+        const response = await fetch('/api/detect', {
             method: "POST",
             body: base64Image
         });
