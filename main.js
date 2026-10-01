@@ -1,11 +1,11 @@
 import { initCamera, startCaptureLoop } from './camera.js';
 import { UIManager } from './ui.js';
+import { initMap } from './map.js';
 
 // Elements
 const splashScreen = document.getElementById('splash-screen');
 const appContainer = document.getElementById('app-container');
 const startBtn = document.getElementById('start-btn');
-const settingsBtn = document.getElementById('settings-btn');
 
 // State
 let isAppStarted = false;
@@ -39,6 +39,12 @@ async function initApp() {
             startCaptureLoop();
             console.log('[APP] Detection loop started');
             
+            // Initialize Leaflet Map
+            setTimeout(() => {
+                initMap();
+                console.log('[APP] Map initialized');
+            }, 500); // pequeno delay para garantir que a div está visível/renderizada
+            
             isAppStarted = true;
         } catch (error) {
             console.error("[APP] Failed to start app:", error);
@@ -46,11 +52,6 @@ async function initApp() {
             startBtn.textContent = "Tentar Novamente";
             alert("Não foi possível acessar a câmera. Verifique as permissões.");
         }
-    });
-
-    // Settings
-    settingsBtn?.addEventListener('click', () => {
-        UIManager.toggleSettings();
     });
 }
 

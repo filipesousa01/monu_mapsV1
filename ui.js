@@ -4,25 +4,29 @@ export const UIManager = {
     canvas: document.getElementById('detection-overlay'),
     ctx: null,
     videoElement: document.getElementById('camera-feed'),
-    settingsModal: document.getElementById('settings-modal'),
     
-    // Bottom sheet
-    infoPanel: document.getElementById('info-panel'),
-    emptyState: document.querySelector('.info-empty-state'),
-    contentState: document.querySelector('.info-content'),
+    // Screens
+    screens: document.querySelectorAll('.screen'),
+    navTabs: document.querySelectorAll('.nav-tab'),
     
-    // Info Elements
-    titleEl: document.getElementById('monument-title'),
-    confEl: document.getElementById('confidence-value'),
-    periodEl: document.getElementById('monument-period'),
-    descEl: document.getElementById('monument-description'),
-    addrEl: document.getElementById('monument-address'),
+    // Floating Card (Camera Screen)
+    monumentCard: document.getElementById('monument-card'),
+    cardConfidence: document.getElementById('card-confidence-text'),
+    cardTitle: document.getElementById('card-monument-name'),
+    cardLocation: document.getElementById('card-monument-location'),
+    recognitionToast: document.getElementById('recognition-toast'),
     
-    // Collapsible Elements
-    pillNameDisplay: document.getElementById('pill-name-display'),
-    pillBadgeDisplay: document.getElementById('pill-badge-display'),
-    sheetPillToggle: document.getElementById('sheet-pill-toggle'),
-    sheetDragHandle: document.getElementById('sheet-drag-handle'),
+    // Info Modal
+    infoModal: document.getElementById('info-modal'),
+    infoBackdrop: document.getElementById('info-modal-backdrop'),
+    infoCloseBtn: document.getElementById('info-close-btn'),
+    infoTitle: document.getElementById('info-title'),
+    infoDesc: document.getElementById('info-description'),
+    btnSave: document.getElementById('btn-save'),
+    btnContinue: document.getElementById('btn-continue'),
+    
+    // Current detection state
+    currentHistoricalData: null,
 
     init() {
         if (this.canvas) {
@@ -38,37 +42,38 @@ export const UIManager = {
             });
         }
         
-        // Settings Modal Close
-        document.querySelector('.close-btn')?.addEventListener('click', () => {
-            this.settingsModal.classList.add('hidden');
+        // Screen Navigation
+        this.navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetScreenId = tab.getAttribute('data-screen');
+                this.switchScreen(targetScreenId);
+            });
         });
 
-        this.sheetPillToggle?.addEventListener('click', () => this.toggleSheet());
-        this.sheetDragHandle?.addEventListener('click', () => this.toggleSheet());
+        // Open Modal from Card
+        this.monumentCard?.addEventListener('click', () => {
+            this.openInfoModal();
+        });
 
-        // Initially show collapsed state
-        this.infoPanel.className = 'bottom-sheet state-collapsed';
+        // Close Modal
+        this.infoBackdrop?.addEventListener('click', () => this.closeInfoModal());
+        this.infoCloseBtn?.addEventListener('click', () => this.closeInfoModal());
+        this.btnContinue?.addEventListener('click', () => this.closeInfoModal());
     },
 
-    toggleSheet() {
-        // Se estiver escondido, não faz nada
-        if (this.infoPanel.classList.contains('state-hidden')) return;
+    switchScreen(screenId) {
+        // Update nav UI
+        this.navTabs.forEach(t => t.classList.remove('active'));
+        const activeTab = document.querySelector(`.nav-tab[data-screen="${screenId}"]`);
+        if(activeTab) activeTab.classList.add('active');
 
-        // Se estiver expandido, recolhe para o estado anterior (peek se tiver conteúdo, senão collapsed)
-        if (this.infoPanel.classList.contains('state-expanded')) {
-            if (!this.emptyState.classList.contains('hidden')) {
-                this.infoPanel.className = 'bottom-sheet state-collapsed';
-            } else {
-                this.infoPanel.className = 'bottom-sheet state-peek';
-            }
-        } else {
-            // Se estiver colapsado ou em peek, expande para ver tudo
-            this.infoPanel.className = 'bottom-sheet state-expanded';
-        }
+        // Update screens
+        this.screens.forEach(s => s.classList.remove('active'));
+        const activeScreen = document.getElementById(screenId);
+        if(activeScreen) activeScreen.classList.add('active');
     },
 
     setupOverlay(videoWidth, videoHeight) {
-        // Canvas mantido apenas para captura de frames (offscreen), sem desenho visual
         if (this.canvas) {
             this.canvas.width = videoWidth;
             this.canvas.height = videoHeight;
@@ -78,12 +83,15 @@ export const UIManager = {
     drawDetections(predictions, imageWidth, imageHeight) {
         if (!this.ctx) return;
         
-        // Clear previous
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        if (!predictions || predictions.length === 0) return;
+        // Se não houver predições, oculta o card e o toast
+        if (!predictions || predictions.length === 0) {
+            this.monumentCard?.classList.add('hidden');
+            this.recognitionToast?.classList.add('hidden');
+            return;
+        }
 
-        // Calculate scaling
         const scaleX = this.canvas.width / imageWidth;
         const scaleY = this.canvas.height / imageHeight;
 
@@ -93,15 +101,14 @@ export const UIManager = {
             const w = p.width * scaleX;
             const h = p.height * scaleY;
             
-            // Top Left
             const tlX = x - (w / 2);
             const tlY = y - (h / 2);
 
-            // Bounding box minimalista (cantoneiras)
-            this.ctx.strokeStyle = '#20b27c'; // Emerald accent
-            this.ctx.lineWidth = 2.5;
+            // Bounding box (cantoneiras verdes limpas)
+            this.ctx.strokeStyle = '#20b27c'; 
+            this.ctx.lineWidth = 3;
             
-            const cornerSize = 20;
+            const cornerSize = 24;
 
             this.ctx.beginPath();
             // Top left corner
@@ -125,58 +132,45 @@ export const UIManager = {
             this.ctx.lineTo(tlX + cornerSize, tlY + h);
             
             this.ctx.stroke();
-
-            // Ponto central de foco (cruz pequena)
-            this.ctx.beginPath();
-            this.ctx.moveTo(x - 5, y);
-            this.ctx.lineTo(x + 5, y);
-            this.ctx.moveTo(x, y - 5);
-            this.ctx.lineTo(x, y + 5);
-            this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)'; // Dourado
-            this.ctx.lineWidth = 1.5;
-            this.ctx.stroke();
         });
     },
 
     showInfoPanel(historicalData, confidence, classKey) {
         if (!historicalData) return;
 
+        this.currentHistoricalData = historicalData;
         const confPct = Math.round(confidence * 100);
 
-        // Update Pill UI
-        this.pillNameDisplay.textContent = historicalData.name;
-        this.pillNameDisplay.classList.remove('pill-name-empty');
-        this.pillBadgeDisplay.textContent = `${confPct}%`;
-        this.pillBadgeDisplay.classList.remove('hidden');
-
-        // Hide empty state, show content
-        this.emptyState.classList.add('hidden');
-        this.contentState.classList.remove('hidden');
-
-        // Populate expanded data
-        this.titleEl.textContent = historicalData.name;
-        this.periodEl.textContent = historicalData.period || 'Data não disponível';
-        this.descEl.textContent = historicalData.description;
-        this.addrEl.textContent = historicalData.location || 'São Luís, MA';
-
-        // Auto-show info panel when monument detected
-        // Se está escondido ou apenas colapsado, abre em peek para mostrar resultado
-        if (this.infoPanel.classList.contains('state-hidden') || 
-            this.infoPanel.classList.contains('state-collapsed')) {
-            this.infoPanel.className = 'bottom-sheet state-peek';
+        // Atualiza o Card Flutuante
+        if(this.cardTitle) this.cardTitle.textContent = historicalData.name;
+        if(this.cardConfidence) this.cardConfidence.textContent = `${confPct}% de confiança`;
+        if(this.cardLocation) this.cardLocation.textContent = historicalData.location || 'São Luís, MA';
+        
+        // Exibe o toast e o card (se estiverem na tela da câmera)
+        const cameraScreen = document.getElementById('screen-camera');
+        if(cameraScreen && cameraScreen.classList.contains('active')) {
+            this.recognitionToast?.classList.remove('hidden');
+            this.monumentCard?.classList.remove('hidden');
         }
 
-        // Highlight on map (if map is active/implemented)
+        // Highlight on map
         if (typeof highlightMonumentOnMap === 'function' && classKey) {
             highlightMonumentOnMap(classKey);
         }
     },
     
-    toggleSettings() {
-        if (this.settingsModal.classList.contains('hidden')) {
-            this.settingsModal.classList.remove('hidden');
-        } else {
-            this.settingsModal.classList.add('hidden');
-        }
+    openInfoModal() {
+        if(!this.currentHistoricalData) return;
+        
+        // Preenche a modal
+        this.infoTitle.textContent = this.currentHistoricalData.name;
+        this.infoDesc.textContent = this.currentHistoricalData.description;
+        
+        // Mostra a modal
+        this.infoModal.classList.remove('hidden');
+    },
+    
+    closeInfoModal() {
+        this.infoModal.classList.add('hidden');
     }
 };

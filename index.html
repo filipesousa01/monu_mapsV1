@@ -10,7 +10,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <!-- Splash Screen -->
+    <!-- ==================== SPLASH SCREEN ==================== -->
     <div id="splash-screen" class="active">
         <div class="splash-container">
             <!-- Colonial Building Line-Art SVG -->
@@ -122,112 +122,160 @@
         </div>
     </div>
 
-    <!-- Main App Container -->
+    <!-- ==================== MAIN APP ==================== -->
     <div id="app-container" class="hidden">
 
-        <!-- Fullscreen Camera Feed -->
-        <video id="camera-feed" autoplay playsinline></video>
-        <canvas id="detection-overlay"></canvas>
+        <!-- ============ SCREEN: CÂMERA (default) ============ -->
+        <div id="screen-camera" class="screen active">
+            <!-- Fullscreen Camera Feed -->
+            <video id="camera-feed" autoplay playsinline></video>
+            <canvas id="detection-overlay"></canvas>
 
-        <!-- Live badge -->
-        <div class="live-badge">
-            <span class="live-dot"></span>
-            AO VIVO
-        </div>
+            <!-- Top Bar -->
+            <header class="camera-top-bar">
+                <button id="flash-btn" class="circle-btn" aria-label="Flash">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                </button>
+                <div class="top-center-info">
+                    <h2 class="top-title">Explorar</h2>
+                    <p class="top-location" id="top-location-text">São Luís, MA</p>
+                </div>
+                <button id="gps-btn" class="circle-btn accent" aria-label="Localização">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line></svg>
+                </button>
+            </header>
 
-        <!-- Top bar -->
-        <header class="top-bar">
-            <div class="app-title-pill">
-                <h2 class="app-title">Maranhão Histórico</h2>
-            </div>
-            <button id="settings-btn" class="icon-btn" aria-label="Configurações">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-        </header>
-
-        <!-- Status Toast -->
-        <div id="status-toast" class="toast hidden">
-            <span class="status-icon">🔄</span>
-            <span class="status-text">Iniciando câmera...</span>
-        </div>
-
-        <!-- Bottom Info Panel (Collapsible) -->
-        <div id="info-panel" class="bottom-sheet state-hidden">
-            <!-- Drag Handle Area (Always visible when not hidden) -->
-            <div class="sheet-handle-area" id="sheet-drag-handle">
-                <div class="drag-handle"></div>
+            <!-- Recognition Toast -->
+            <div id="recognition-toast" class="recognition-toast hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Monumento reconhecido</span>
             </div>
 
-            <!-- Collapsed Pill View -->
-            <div class="sheet-pill-row" id="sheet-pill-toggle">
-                <div class="pill-name pill-name-empty" id="pill-name-display">Aponte a câmera para um monumento</div>
-                <div class="pill-badge hidden" id="pill-badge-display"></div>
-                <svg class="pill-chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-            </div>
-
-            <!-- Expandable Content -->
-            <div class="sheet-scroll">
-                <div class="info-content hidden">
-                    <div class="monument-header">
-                        <span class="monument-category">Patrimônio Histórico</span>
-                        <h3 id="monument-title">Nome do Monumento</h3>
+            <!-- Monument Floating Card -->
+            <div id="monument-card" class="monument-card hidden">
+                <div class="card-body" id="card-body-toggle">
+                    <div class="card-confidence" id="card-confidence">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <span id="card-confidence-text">0% de confiança</span>
                     </div>
-
-                    <p id="monument-period" class="period-text">1823 — 1864</p>
-
-                    <div class="monument-location">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        <span id="monument-address">Centro Histórico, São Luís - MA</span>
+                    <h3 class="card-title" id="card-monument-name">Aponte a câmera</h3>
+                    <div class="card-location">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span id="card-monument-location">Centro Histórico, São Luís</span>
                     </div>
-
-                    <p id="monument-description" class="description-text">
-                        Biografia ou descrição histórica aparecerá aqui.
-                    </p>
                 </div>
-                
-                <div class="info-empty-state">
-                    <div class="scan-icon">🔍</div>
-                    <p>Mantenha o monumento no centro da tela para identificá-lo.</p>
+                <div class="card-chevron" id="card-chevron-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Nav Bar -->
-        <nav class="bottom-nav" aria-label="Navegação principal">
-            <button class="nav-tab" id="nav-map" aria-label="Mapa">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                Mapa
-            </button>
-            <button class="nav-tab active" id="nav-camera" aria-label="Câmera">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                Câmera
-            </button>
-            <button class="nav-tab" id="nav-info" aria-label="Informações">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                Info
-            </button>
-        </nav>
-
-        <!-- Settings Modal -->
-        <div id="settings-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Configurações</h3>
-                    <button class="close-btn">&times;</button>
+        <!-- ============ SCREEN: MAPA ============ -->
+        <div id="screen-map" class="screen">
+            <header class="screen-header">
+                <h2 class="screen-header-title">Mapa</h2>
+                <p class="screen-header-subtitle">Monumentos Históricos</p>
+            </header>
+            <div id="map-bg" class="map-container"></div>
+            <!-- Map Legend -->
+            <div class="map-legend">
+                <div class="legend-item">
+                    <span class="legend-dot active"></span>
+                    <span>Último detectado</span>
                 </div>
-                <div class="modal-body">
+                <div class="legend-item">
+                    <span class="legend-dot"></span>
+                    <span>Monumento</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ SCREEN: AJUSTES ============ -->
+        <div id="screen-settings" class="screen">
+            <header class="screen-header">
+                <h2 class="screen-header-title">Ajustes</h2>
+                <p class="screen-header-subtitle">Configurações do Aplicativo</p>
+            </header>
+            <div class="settings-body">
+                <div class="setting-card">
+                    <div class="setting-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <h3>Detecção</h3>
+                    </div>
                     <div class="setting-item">
                         <label for="confidence-slider">Confiança Mínima (<span id="conf-val-display">40</span>%)</label>
                         <input type="range" id="confidence-slider" min="10" max="90" value="40">
                         <p class="setting-desc">Aumente se estiver detectando incorretamente.</p>
                     </div>
-                    <div class="setting-item">
-                        <label>Câmera</label>
-                        <button id="switch-camera-btn" class="secondary-btn">Alternar Câmera</button>
+                </div>
+                <div class="setting-card">
+                    <div class="setting-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        <h3>Câmera</h3>
                     </div>
+                    <div class="setting-item">
+                        <label>Alternar entre câmera frontal e traseira</label>
+                        <button id="switch-camera-btn" class="secondary-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            Alternar Câmera
+                        </button>
+                    </div>
+                </div>
+                <div class="setting-card about-card">
+                    <div class="setting-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <h3>Sobre</h3>
+                    </div>
+                    <p class="about-text">
+                        <strong>História na Palma da Mão</strong> — Guia turístico inteligente dos monumentos históricos do Maranhão com visão computacional.
+                    </p>
+                    <p class="about-version">Versão 1.0.0</p>
                 </div>
             </div>
         </div>
+
+        <!-- ============ INFO MODAL (overlay sobre câmera) ============ -->
+        <div id="info-modal" class="info-modal hidden">
+            <div class="info-modal-backdrop" id="info-modal-backdrop"></div>
+            <div class="info-modal-sheet">
+                <div class="info-drag-handle"></div>
+                <button class="info-close-btn" id="info-close-btn" aria-label="Fechar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div class="info-tag" id="info-tag">PATRIMÔNIO HISTÓRICO</div>
+                <h2 class="info-title" id="info-title">Nome do Monumento</h2>
+                <p class="info-description" id="info-description">
+                    Descrição histórica do monumento aparecerá aqui.
+                </p>
+                <div class="info-actions">
+                    <button class="btn-save" id="btn-save">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        Salvar história
+                    </button>
+                    <button class="btn-continue" id="btn-continue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                        Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ BOTTOM NAV ============ -->
+        <nav class="bottom-nav" id="bottom-nav">
+            <button class="nav-tab" id="nav-map" aria-label="Mapa" data-screen="screen-map">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                <span>Mapa</span>
+            </button>
+            <button class="nav-tab nav-center active" id="nav-camera" aria-label="Câmera" data-screen="screen-camera">
+                <div class="nav-center-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                </div>
+            </button>
+            <button class="nav-tab" id="nav-settings" aria-label="Ajustes" data-screen="screen-settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>Ajustes</span>
+            </button>
+        </nav>
     </div>
 
     <!-- Scripts -->
