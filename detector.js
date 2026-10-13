@@ -1,13 +1,11 @@
 import { UIManager } from './ui.js';
 import { getHistoricalData } from './historical-data.js';
 
-// Confiança mínima padrão
-const CONFIDENCE_THRESHOLD = 0.25;
+// Confiança mínima fixa: só aceita detecções com 90% ou mais
+const MIN_CONFIDENCE = 0.9;
 
 export async function detectFrame(base64Image, videoWidth, videoHeight) {
-    // Pega a confiança do slider
-    const slider = document.getElementById('confidence-slider');
-    const minConfidence = slider ? parseInt(slider.value) / 100 : CONFIDENCE_THRESHOLD;
+    const minConfidence = MIN_CONFIDENCE;
 
     try {
         // Chama o proxy serverless — a API key fica segura no servidor

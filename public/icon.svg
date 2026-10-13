@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68">
+  <rect width="68" height="68" fill="#F6F1E7"/>
+  <g fill="#1D4E9E">
+    <path d="M34 8 C42 20 42 25 34 34 C26 25 26 20 34 8Z"/>
+    <path d="M34 8 C42 20 42 25 34 34 C26 25 26 20 34 8Z" transform="rotate(90 34 34)"/>
+    <path d="M34 8 C42 20 42 25 34 34 C26 25 26 20 34 8Z" transform="rotate(180 34 34)"/>
+    <path d="M34 8 C42 20 42 25 34 34 C26 25 26 20 34 8Z" transform="rotate(270 34 34)"/>
+    <circle cx="0" cy="0" r="12"/><circle cx="68" cy="0" r="12"/><circle cx="0" cy="68" r="12"/><circle cx="68" cy="68" r="12"/>
+  </g>
+  <circle cx="34" cy="34" r="5" fill="#E0A43A"/>
+</svg>

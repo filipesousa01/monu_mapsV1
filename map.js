@@ -1,51 +1,210 @@
-// map.js — Leaflet map centered on São Luís historic center
+// map.js — Leaflet map centered on São Luís historic center + painel "Por perto"
+import { getHistoricalData } from './historical-data.js';
+
+const DEFAULT_CENTER = [-2.5297, -44.2990];
 
 let mapInstance = null;
-let monumentMarkers = {};
-let activeMarker = null;
+let markers = {};          // place.key -> L.marker
+let activeKey = null;      // place.key do pino destacado
+let pendingFocus = false;  // destaque feito com o mapa oculto: centraliza ao abrir
+let hasBeenShown = false;
+let userMarker = null;
+let userPosition = null;
+let onSelectPlace = null;
 
-// Monument coordinates (São Luís, MA)
-const MONUMENT_COORDS = {
-    "goncalves_dias_rosto":      { lat: -2.5288, lng: -44.2984 },
-    "monumento_goncalves_dias":  { lat: -2.5288, lng: -44.2984 },
-    "maria_firmina_busto":       { lat: -2.5301, lng: -44.2960 },
-    "maria_firmina_rosto":       { lat: -2.5301, lng: -44.2960 },
-    "leoes":                     { lat: -2.5270, lng: -44.2990 },
-    "postePalacio_leoes":        { lat: -2.5270, lng: -44.2990 },
-    "pedra_memoria":             { lat: -2.5340, lng: -44.2920 },
-    "fonte_ribeirao":            { lat: -2.5290, lng: -44.2970 },
-    "daniel_touche":             { lat: -2.5265, lng: -44.3010 },
-    "benedicto_leite":           { lat: -2.5275, lng: -44.3005 },
-    "ferreira_gullar_busto":     { lat: -2.5310, lng: -44.2945 },
-    "artur_azevedo_busto":       { lat: -2.5285, lng: -44.2975 },
-    "canhaoreviver":             { lat: -2.5280, lng: -44.3020 },
-    "pescadores":                { lat: -2.5450, lng: -44.2850 },
-};
+// Um pino por local. `classes` lista as outras classes do modelo que ficam no mesmo lugar.
+const PLACES = [
+    { key: 'monumento_goncalves_dias', classes: ['goncalves_dias_rosto'], lat: -2.5288, lng: -44.2984 },
+    { key: 'maria_firmina_busto',      classes: ['maria_firmina_rosto'],  lat: -2.5301, lng: -44.2960 },
+    { key: 'leoes',                    classes: ['postePalacio_leoes'],   lat: -2.5270, lng: -44.2990 },
+    { key: 'pedra_memoria',            lat: -2.5340, lng: -44.2920 },
+    { key: 'fonte_ribeirao',           lat: -2.5290, lng: -44.2970 },
+    { key: 'daniel_touche',            lat: -2.5265, lng: -44.3010 },
+    { key: 'benedicto_leite',          lat: -2.5275, lng: -44.3005 },
+    { key: 'ferreira_gullar_busto',    lat: -2.5310, lng: -44.2945 },
+    { key: 'artur_azevedo_busto',      lat: -2.5285, lng: -44.2975 },
+    { key: 'canhaoreviver',            lat: -2.5280, lng: -44.3020 },
+    { key: 'pescadores',               lat: -2.5450, lng: -44.2850 },
+].map((place, i) => {
+    const data = getHistoricalData(place.key);
+    return { ...place, number: i + 1, name: data.name, subtitle: data.location };
+});
 
-// Custom crimson marker
-function createMarker(active = false) {
-    const color = active ? '#C9960A' : '#1A2E1A';
-    const ring  = active ? '#FFD700' : 'rgba(255,255,255,0.9)';
-    const size  = active ? 14 : 10;
+function placeForClass(classKey) {
+    return PLACES.find(p => p.key === classKey || p.classes?.includes(classKey));
+}
+
+function pinIcon(number, active = false) {
+    const size = active ? 40 : 30;
     return L.divIcon({
         className: '',
-        html: `
-            <svg width="${size * 3}" height="${size * 3.5}" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 0 C6.7 0 0 6.7 0 15 C0 26 15 40 15 40 C15 40 30 26 30 15 C30 6.7 23.3 0 15 0Z"
-                      fill="${color}" stroke="${ring}" stroke-width="2"/>
-                <circle cx="15" cy="15" r="5" fill="white" opacity="0.95"/>
-            </svg>`,
-        iconSize:   [size * 3, size * 3.5],
-        iconAnchor: [size * 1.5, size * 3.5],
+        html: `<span class="mm-pin${active ? ' mm-pin--active' : ''}">${number}</span>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
     });
 }
 
-export function initMap() {
+const userIcon = () => L.divIcon({
+    className: '',
+    html: '<span class="mm-user-dot"></span>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+});
+
+function isMapVisible() {
+    return Boolean(mapInstance && mapInstance.getContainer().offsetWidth > 0);
+}
+
+// Centraliza um ponto na área do mapa que fica acima do painel inferior
+function panToVisible(latlng, animate = true) {
+    const sheet = document.querySelector('.mm-map-sheet');
+    const offsetY = sheet ? sheet.offsetHeight / 2 : 0;
+    const zoom = mapInstance.getZoom();
+    const target = mapInstance.unproject(mapInstance.project(latlng, zoom).add([0, offsetY]), zoom);
+    mapInstance.panTo(target, { animate, duration: 0.6 });
+}
+
+// ---------- Painel "Por perto" ----------
+
+function normalize(text) {
+    return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function distanceMeters(a, b) {
+    const R = 6371000;
+    const toRad = deg => deg * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function formatDistance(m) {
+    if (m < 1000) return `${Math.round(m / 10) * 10} m`;
+    return `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+}
+
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function setHint(text) {
+    const hint = document.getElementById('nearby-hint');
+    if (!hint) return;
+    hint.textContent = text;
+    hint.classList.toggle('hidden', !text);
+}
+
+function renderList() {
+    const list = document.getElementById('nearby-list');
+    if (!list) return;
+
+    const query = normalize(document.getElementById('monument-search')?.value.trim() || '');
+    let places = PLACES.filter(p => !query || normalize(`${p.name} ${p.subtitle}`).includes(query));
+
+    if (userPosition) {
+        places = places
+            .map(p => ({ ...p, distance: distanceMeters(userPosition, p) }))
+            .sort((a, b) => a.distance - b.distance);
+    }
+
+    list.replaceChildren();
+
+    if (places.length === 0) {
+        list.append(el('li', 'mm-list-empty', 'Nenhum monumento encontrado.'));
+        return;
+    }
+
+    places.forEach(place => {
+        const row = el('button', 'mm-list-row');
+        row.type = 'button';
+        row.classList.toggle('is-active', place.key === activeKey);
+        row.addEventListener('click', () => selectPlace(place));
+
+        const badge = el('span', 'mm-list-badge', String(place.number));
+        badge.setAttribute('aria-hidden', 'true');
+
+        const text = el('span', 'mm-list-text');
+        text.append(el('span', 'mm-list-title', place.name), el('span', 'mm-list-sub', place.subtitle));
+
+        row.append(badge, text);
+
+        if (typeof place.distance === 'number') {
+            row.append(el('span', 'mm-list-distance', formatDistance(place.distance)));
+        } else {
+            const chevron = el('span', 'mm-list-chevron');
+            chevron.setAttribute('aria-hidden', 'true');
+            chevron.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>';
+            row.append(chevron);
+        }
+
+        const item = el('li');
+        item.append(row);
+        list.append(item);
+    });
+}
+
+function setActive(key) {
+    if (activeKey && markers[activeKey]) {
+        const prev = PLACES.find(p => p.key === activeKey);
+        markers[activeKey].setIcon(pinIcon(prev.number)).setZIndexOffset(0);
+    }
+    activeKey = key;
+    const place = PLACES.find(p => p.key === key);
+    if (place && markers[key]) {
+        markers[key].setIcon(pinIcon(place.number, true)).setZIndexOffset(1000);
+    }
+    renderList();
+}
+
+function selectPlace(place) {
+    setActive(place.key);
+    panToVisible([place.lat, place.lng]);
+    onSelectPlace?.(place.key);
+}
+
+function locateUser() {
+    const btn = document.getElementById('map-locate-btn');
+
+    if (!('geolocation' in navigator)) {
+        setHint('Localização indisponível neste aparelho.');
+        return;
+    }
+
+    btn?.setAttribute('aria-busy', 'true');
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            btn?.removeAttribute('aria-busy');
+            userPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+            if (userMarker) userMarker.setLatLng(userPosition);
+            else userMarker = L.marker(userPosition, { icon: userIcon(), interactive: false, keyboard: false }).addTo(mapInstance);
+
+            panToVisible(userPosition);
+            document.getElementById('nearby-title').textContent = 'Por perto';
+            setHint('');
+            renderList();
+        },
+        () => {
+            btn?.removeAttribute('aria-busy');
+            setHint('Não foi possível obter sua localização.');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+}
+
+// ---------- API ----------
+
+export function initMap({ onSelect } = {}) {
     if (mapInstance) return;
+    onSelectPlace = onSelect;
 
     mapInstance = L.map('map-bg', {
-        center: [-2.5297, -44.2990],
-        zoom: 14,
+        center: DEFAULT_CENTER,
+        zoom: 16,
         zoomControl: false,
         attributionControl: false,
         dragging: true,
@@ -54,41 +213,56 @@ export function initMap() {
         touchZoom: false,
     });
 
-    // CartoDB Voyager — colorful, bright, detailed
+    L.control.attribution({ position: 'topleft', prefix: false }).addTo(mapInstance);
+
+    // OpenStreetMap (os tiles do CARTO passaram a exigir chave de API)
     L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        { subdomains: 'abcd', maxZoom: 19 }
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }
     ).addTo(mapInstance);
 
     // Plot all monument markers
-    Object.entries(MONUMENT_COORDS).forEach(([key, coords]) => {
-        const marker = L.marker([coords.lat, coords.lng], { icon: createMarker(false) });
+    PLACES.forEach(place => {
+        const marker = L.marker([place.lat, place.lng], { icon: pinIcon(place.number), title: place.name });
+        marker.on('click', () => selectPlace(place));
         marker.addTo(mapInstance);
-        monumentMarkers[key] = marker;
+        markers[place.key] = marker;
     });
+
+    document.getElementById('monument-search')?.addEventListener('input', renderList);
+    document.getElementById('map-locate-btn')?.addEventListener('click', locateUser);
+    renderList();
+
+    if (isMapVisible()) invalidateMapSize();
 }
 
-export function highlightMonumentOnMap(classKey) {
+// Chamado quando a aba Mapa fica visível
+export function invalidateMapSize() {
+    if (!mapInstance) return;
+    mapInstance.invalidateSize();
+
+    const active = PLACES.find(p => p.key === activeKey);
+    if (pendingFocus && active) {
+        panToVisible([active.lat, active.lng], false);
+    } else if (!hasBeenShown) {
+        panToVisible(DEFAULT_CENTER, false);
+    }
+    pendingFocus = false;
+    hasBeenShown = true;
+}
+
+export function highlightMonumentOnMap(classKey, force = false) {
     if (!mapInstance) return;
 
-    // Reset previous active
-    if (activeMarker) {
-        const prevKey = activeMarker._classKey;
-        if (prevKey && monumentMarkers[prevKey]) {
-            monumentMarkers[prevKey].setIcon(createMarker(false));
-        }
-    }
+    const place = placeForClass(classKey);
+    if (!place) return;
+    if (place.key === activeKey && !force) return;
 
-    // Highlight new
-    const marker = monumentMarkers[classKey];
-    if (marker) {
-        marker.setIcon(createMarker(true));
-        activeMarker = marker;
-        activeMarker._classKey = classKey;
+    setActive(place.key);
 
-        const coords = MONUMENT_COORDS[classKey];
-        if (coords) {
-            mapInstance.panTo([coords.lat, coords.lng], { animate: true, duration: 0.8 });
-        }
-    }
+    if (isMapVisible()) panToVisible([place.lat, place.lng]);
+    else pendingFocus = true;
 }

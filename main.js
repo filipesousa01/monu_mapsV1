@@ -41,7 +41,7 @@ async function initApp() {
             
             // Initialize Leaflet Map
             setTimeout(() => {
-                initMap();
+                initMap({ onSelect: (classKey) => UIManager.openMonument(classKey) });
                 console.log('[APP] Map initialized');
             }, 500); // pequeno delay para garantir que a div está visível/renderizada
             

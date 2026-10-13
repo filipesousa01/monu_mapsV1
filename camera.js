@@ -90,8 +90,3 @@ export function startCaptureLoop() {
     
     console.log(`[CAMERA] Capture loop started (interval: ${CAPTURE_INTERVAL_MS}ms)`);
 }
-
-// Attach listener to settings
-document.getElementById('switch-camera-btn')?.addEventListener('click', () => {
-    switchCamera(!useFrontCamera);
-});
