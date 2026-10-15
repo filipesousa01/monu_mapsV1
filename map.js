@@ -15,14 +15,28 @@ let onSelectPlace = null;
 // Um pino por local. `classes` lista as outras classes do modelo que ficam no mesmo lugar.
 const PLACES = [
     { key: 'monumento_goncalves_dias', classes: ['goncalves_dias_rosto'], lat: -2.5288, lng: -44.2984 },
-    { key: 'maria_firmina_busto',      classes: ['maria_firmina_rosto'],  lat: -2.5301, lng: -44.2960 },
+    // Todos os bustos ficam juntos na Praça do Panteon (Praça Deodoro)
+    {
+        key: 'praca_panteon',
+        classes: [
+            'maria_firmina_busto', 'maria_firmina_rosto',
+            'ferreira_gullar_busto', 'Ferreira_Gullar_Rosto',
+            'artur_azevedo_busto',
+            'Aluizio_Busto',
+            'josue_montello_Busto',
+            'humberto_de_campos_busto',
+            'sousandrade_busto', 'Sousandrade_rosto',
+            'bandeira_tribuzzi_busto',
+            'urbano_santos_busto',
+            'gomes_sousa_busto',
+        ],
+        lat: -2.529568, lng: -44.295818,
+    },
     { key: 'leoes',                    classes: ['postePalacio_leoes'],   lat: -2.5270, lng: -44.2990 },
     { key: 'pedra_memoria',            lat: -2.5340, lng: -44.2920 },
     { key: 'fonte_ribeirao',           lat: -2.5290, lng: -44.2970 },
     { key: 'daniel_touche',            lat: -2.5265, lng: -44.3010 },
     { key: 'benedicto_leite',          lat: -2.5275, lng: -44.3005 },
-    { key: 'ferreira_gullar_busto',    lat: -2.5310, lng: -44.2945 },
-    { key: 'artur_azevedo_busto',      lat: -2.5285, lng: -44.2975 },
     { key: 'canhaoreviver',            lat: -2.5280, lng: -44.3020 },
     { key: 'pescadores',               lat: -2.5450, lng: -44.2850 },
 ].map((place, i) => {

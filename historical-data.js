@@ -95,6 +95,12 @@ const historicalDatabase = {
     },
     
     // ---- MONUMENTOS E LOCAIS ----
+    "praca_panteon": {
+        name: "Bustos da Praça do Panteon",
+        period: "Galeria de bustos",
+        description: "Conjunto de bustos que homenageia escritores e personalidades maranhenses, como Maria Firmina dos Reis, Aluísio e Artur Azevedo, Sousandrade, Ferreira Gullar, Josué Montello, Humberto de Campos, Bandeira Tribuzi, Urbano Santos e Gomes de Sousa.",
+        location: "Praça Deodoro / Praça do Panteon"
+    },
     "postePalacio_leoes": {
         name: "Poste do Palácio dos Leões",
         period: "Séc. XIX / XX",
