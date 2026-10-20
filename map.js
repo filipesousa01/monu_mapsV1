@@ -69,10 +69,78 @@ function isMapVisible() {
     return Boolean(mapInstance && mapInstance.getContainer().offsetWidth > 0);
 }
 
+// ---------- Painel retrátil ----------
+
+function isSheetCollapsed(sheet) {
+    return sheet.classList.contains('is-collapsed');
+}
+
+// Altura que fica visível com o painel recolhido: alça + busca + espaço da barra de abas
+function sheetPeekHeight(sheet) {
+    const search = sheet.querySelector('.search-field');
+    const nav = document.getElementById('bottom-nav');
+    const navClearance = nav ? window.innerHeight - nav.getBoundingClientRect().top : 0;
+    return search.offsetTop + search.offsetHeight + 14 + navClearance;
+}
+
+// Quanto do mapa o painel cobre (no estado final, mesmo durante a animação)
+function sheetCoveredHeight() {
+    const sheet = document.getElementById('map-sheet');
+    if (!sheet) return 0;
+    return isSheetCollapsed(sheet) ? sheetPeekHeight(sheet) : sheet.offsetHeight;
+}
+
+function setSheetCollapsed(collapsed) {
+    const sheet = document.getElementById('map-sheet');
+    const toggle = document.getElementById('sheet-toggle');
+    if (!sheet || isSheetCollapsed(sheet) === collapsed) return;
+
+    if (collapsed) sheet.style.setProperty('--sheet-peek', `${sheetPeekHeight(sheet)}px`);
+    sheet.classList.toggle('is-collapsed', collapsed);
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-label', collapsed ? 'Expandir lista de monumentos' : 'Recolher lista de monumentos');
+    // A lista fica fora da tela quando recolhida: tira do foco do teclado
+    sheet.querySelector('.mm-list-scroll').inert = collapsed;
+}
+
+function initSheetToggle() {
+    const toggle = document.getElementById('sheet-toggle');
+    if (!toggle) return;
+    const sheet = document.getElementById('map-sheet');
+
+    let startY = null;
+    let swiped = false;
+
+    toggle.addEventListener('pointerdown', e => {
+        startY = e.clientY;
+        toggle.setPointerCapture(e.pointerId);
+    });
+    toggle.addEventListener('pointerup', e => {
+        if (startY === null) return;
+        const dy = e.clientY - startY;
+        startY = null;
+        if (Math.abs(dy) > 24) {
+            swiped = true;
+            setSheetCollapsed(dy > 0);
+        }
+    });
+    toggle.addEventListener('pointercancel', () => { startY = null; });
+    toggle.addEventListener('click', () => {
+        if (swiped) { swiped = false; return; }
+        setSheetCollapsed(!isSheetCollapsed(sheet));
+    });
+
+    // Buscar abre o painel de novo
+    document.getElementById('monument-search')?.addEventListener('focus', () => setSheetCollapsed(false));
+
+    window.addEventListener('resize', () => {
+        if (isSheetCollapsed(sheet)) sheet.style.setProperty('--sheet-peek', `${sheetPeekHeight(sheet)}px`);
+    });
+}
+
 // Centraliza um ponto na área do mapa que fica acima do painel inferior
 function panToVisible(latlng, animate = true) {
-    const sheet = document.querySelector('.mm-map-sheet');
-    const offsetY = sheet ? sheet.offsetHeight / 2 : 0;
+    const offsetY = sheetCoveredHeight() / 2;
     const zoom = mapInstance.getZoom();
     const target = mapInstance.unproject(mapInstance.project(latlng, zoom).add([0, offsetY]), zoom);
     mapInstance.panTo(target, { animate, duration: 0.6 });
@@ -248,6 +316,7 @@ export function initMap({ onSelect } = {}) {
 
     document.getElementById('monument-search')?.addEventListener('input', renderList);
     document.getElementById('map-locate-btn')?.addEventListener('click', locateUser);
+    initSheetToggle();
     renderList();
 
     if (isMapVisible()) invalidateMapSize();
