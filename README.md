@@ -60,15 +60,15 @@ O projeto une três frentes de trabalho do laboratório:
 
 São Luís, capital do Maranhão, tem um dos maiores conjuntos de arquitetura colonial portuguesa da América Latina, e o seu Centro Histórico é Patrimônio Mundial da UNESCO. Espalhados por praças e avenidas estão dezenas de bustos, estátuas e monumentos que homenageiam escritores, poetas, políticos e episódios da história maranhense. Muitos visitantes e moradores passam por eles sem saber quem está ali representado.
 
-O **Monu Maps** (também chamado de **História na Palma da Mão**) resolve esse problema de forma simples:
+O **Monu Maps** resolve esse problema de forma simples:
 
-1. O usuário abre o app no celular e aponta a câmera para um monumento.
+1. O usuário abre a aplicação no celular e aponta a câmera para um monumento.
 2. Um **modelo de detecção de objetos treinado no Roboflow** reconhece o monumento em tempo real.
-3. O app mostra um selo com o nome do monumento e a confiança do reconhecimento.
+3. A aplicação mostra um selo com o nome do monumento e a confiança do reconhecimento.
 4. Ao tocar no selo, abre-se uma ficha com **nome, período histórico, descrição e localização**.
 5. O monumento é destacado em um **mapa interativo** do Centro Histórico, que também lista os monumentos próximos ao usuário.
 
-Tudo roda no navegador, sem precisar instalar nada pela loja de aplicativos. Quem quiser pode instalar o app na tela inicial, pois ele é um **PWA**.
+Tudo roda no navegador, sem precisar instalar nada pela loja de aplicativos.
 
 ---
 
