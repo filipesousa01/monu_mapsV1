@@ -84,9 +84,6 @@ Tudo roda no navegador, sem precisar instalar nada pela loja de aplicativos. Que
 | 📍 **"Por perto"** | Com a localização do usuário, a lista de monumentos é ordenada pela distância real (fórmula de Haversine). |
 | 🔎 **Busca** | Busca por nome ou local, que ignora acentos e maiúsculas/minúsculas. |
 | 🔖 **Salvar monumentos** | O usuário pode salvar monumentos favoritos. A lista fica guardada no próprio aparelho (`localStorage`). |
-| 📲 **Instalável (PWA)** | Pode ser adicionado à tela inicial e abre em tela cheia, como um app nativo. |
-| 🔐 **Chave de API protegida** | A chave do Roboflow fica apenas no servidor, dentro de uma função serverless. Ela nunca chega ao navegador. |
-
 ---
 
 ## 💻 Linguagem utilizada
